@@ -11,21 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cities', function (Blueprint $table) {
-            $table->id(); 
-            $table->string('name', 80);
-            $table->string('state', 50);
+        Schema::create('hospitals', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 100);
+            $table->foreignId('city_id')->constrained('cities')->onDelete('cascade');
             $table->timestamps();
             
-            $table->index('name'); 
+            $table->index('name');
+            $table->index('city_id');
         });
     }
 
     /**
      * Reverse the migrations.
      */
-     public function down(): void
+    public function down(): void
     {
-        Schema::dropIfExists('cities');
+        Schema::dropIfExists('hospitals');
     }
 };

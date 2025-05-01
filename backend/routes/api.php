@@ -14,6 +14,19 @@ Route::prefix('patients')->group(function () {
     Route::get('/search', [PatientController::class, 'search']);
 });
 
-Route::get('/hospitals', [citiesController::class, 'index']);
+Route::get('/cities', function () {
+    return response()->json([
+        'data' => App\Models\City::orderBy('name')->get(['id', 'name', 'state']),
+        'meta' => ['count' => App\Models\City::count()]
+    ]);
+});
 
-Route::get('/cities', [hospitalsController::class, 'index']);
+Route::get('/hospitals', function () {
+        return response()->json([
+            'data' => App\Models\Hospital::with('city:id,name')
+                       ->orderBy('name')
+                       ->get(['id', 'name', 'city_id']),
+            'meta' => ['count' => App\Models\Hospital::count()]
+        ]);
+    });
+
