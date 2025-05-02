@@ -6,6 +6,7 @@ use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -18,7 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CitiesTableSeeder::class,
             HospitalsTableSeeder::class,
-            // PatientsTableSeeder::class (si existe)
+            PatientsTableSeeder::class
         ]);
     }
 }

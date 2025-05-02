@@ -7,12 +7,14 @@ use App\Http\Controllers\api\patientController;
 Route::prefix('patients')->group(function () {
     Route::get('/', [PatientController::class, 'index']);
     Route::post('/', [PatientController::class, 'store']);
+    Route::get('/search', [PatientController::class, 'search']);
     Route::get('/{patient}', [PatientController::class, 'show']);
     Route::put('/{patient}', [PatientController::class, 'update']);
     Route::patch('/{patient}', [PatientController::class, 'partialUpdate']);
-    Route::delete('/{patient}', [PatientController::class, 'destroy']);
-    Route::get('/search', [PatientController::class, 'search']);
+    Route::delete('/{id}', [PatientController::class, 'destroy']);
+    Route::get('/{patient}/pdf', [PatientController::class, 'generatePdf']);
 });
+
 
 Route::get('/cities', function () {
     return response()->json([

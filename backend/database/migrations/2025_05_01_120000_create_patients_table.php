@@ -17,8 +17,8 @@ return new class extends Migration
             $table->integer('age');
             $table->enum('gender', ['Masculino', 'Femenino', 'Otro']);
             $table->date('birth_date');
-            $table->foreignId('city_id')->constrained();
-            $table->foreignId('hospital_id')->constrained();
+            $table->unsignedBigInteger('city_id'); 
+            $table->unsignedBigInteger('hospital_id'); 
             $table->string('tutor_name', 100);
             $table->string('tutor_phone', 20);
             $table->date('registration_date');
