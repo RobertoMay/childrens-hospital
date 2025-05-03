@@ -11,7 +11,7 @@ Route::prefix('patients')->group(function () {
     Route::get('/{patient}', [PatientController::class, 'show']);
     Route::put('/{patient}', [PatientController::class, 'update']);
     Route::patch('/{patient}', [PatientController::class, 'partialUpdate']);
-    Route::delete('/{id}', [PatientController::class, 'destroy']);
+    Route::delete('/{patient}', [PatientController::class, 'destroy']);
     Route::get('/{patient}/pdf', [PatientController::class, 'generatePdf']);
 });
 

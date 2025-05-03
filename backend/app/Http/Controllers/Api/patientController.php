@@ -16,18 +16,33 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PatientController extends Controller 
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+
+        $request->validate([
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'page' => 'nullable|integer|min:1'
+        ]);
+
+        $perPage = $request->input('per_page', 10);
+        
         $patients = Patient::with(['city', 'hospital'])
             ->orderBy('full_name')
-            ->paginate(10);
+            ->paginate($perPage);
 
         return response()->json([
             'data' => PatientResource::collection($patients),
-            'meta' => [
+            'pagination' => [
                 'current_page' => $patients->currentPage(),
+                'per_page' => $patients->perPage(),
                 'total_pages' => $patients->lastPage(),
-                'total_items' => $patients->total(),
+                   'total_items' => $patients->total(),
+                'has_prev_page' => $patients->currentPage() > 1,
+                'has_next_page' => $patients->currentPage() < $patients->lastPage(),
+                'prev_page' => $patients->currentPage() > 1 ? $patients->currentPage() - 1 : null,
+                'next_page' => $patients->currentPage() < $patients->lastPage() ? $patients->currentPage() + 1 : null,
+                'first_page' => 1,
+                'last_page' => $patients->lastPage()
             ]
         ], Response::HTTP_OK);
     }
@@ -179,15 +194,17 @@ class PatientController extends Controller
     }
 
     public function generatePdf(Patient $patient)
-{
-    $data = [
-        'patient' => $patient,
-        'age' => $patient->age . ' años', // Ejemplo de dato calculado
-        'current_date' => now()->format('d/m/Y')
-    ];
-    
-    $pdf = PDF::loadView('patients.pdf', $data);
-    
-    return $pdf->download('paciente-'.$patient->id.'.pdf');
-}
+    {
+        $data = [
+            'patient' => $patient->load(['city', 'hospital']),
+            'age' => $patient->age . ' años',
+            'current_date' => now()->format('d/m/Y H:i')
+        ];
+        
+        $pdf = PDF::loadView('patients.pdf', $data)
+                ->setPaper('a4', 'portrait')
+                ->setOption('enable-local-file-access', true);
+        
+        return $pdf->download('ficha-paciente-'.$patient->id.'.pdf');
+    }
 }
