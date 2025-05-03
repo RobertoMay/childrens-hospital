@@ -1,43 +1,11 @@
-// components/cities.tsx
 import { motion } from 'framer-motion';
 import { MapPin, Flag } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
-
-// Datos de prueba para ciudades
-const citiesData = [
-  {
-    id: '1',
-    name: 'Ciudad de México',
-    state: 'Ciudad de México',
-  },
-  {
-    id: '2',
-    name: 'Guadalajara',
-    state: 'Jalisco',
-  },
-  {
-    id: '3',
-    name: 'Monterrey',
-    state: 'Nuevo León',
-  },
-  {
-    id: '4',
-    name: 'Puebla',
-    state: 'Puebla',
-  },
-  {
-    id: '5',
-    name: 'Tijuana',
-    state: 'Baja California',
-  },
-  {
-    id: '6',
-    name: 'Mérida',
-    state: 'Yucatán',
-  },
-];
+import useCityStore from '../lib/utils/stores/cityStore';
 
 export default function Cities() {
+  const { cities, isLoading, error } = useCityStore();
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -53,6 +21,28 @@ export default function Cities() {
     show: { opacity: 1, y: 0 },
   };
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent">
+            <span className="sr-only">Cargando...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p>Error al cargar las ciudades: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <motion.div
@@ -62,7 +52,7 @@ export default function Cities() {
         className="mb-8"
       >
         <h1 className="text-3xl font-bold text-blue-600 mb-2">Ciudades</h1>
-        <p className="text-gray-600">Listado de ciudades </p>
+        <p className="text-gray-600">Listado de ciudades</p>
       </motion.div>
 
       <motion.div
@@ -71,7 +61,7 @@ export default function Cities() {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        {citiesData.map((city) => (
+        {cities.map((city) => (
           <motion.div key={city.id} variants={item}>
             <Card className="bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-all">
               <CardContent className="pb-5 pt-5">

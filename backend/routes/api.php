@@ -30,5 +30,5 @@ Route::get('/hospitals', function () {
                        ->get(['id', 'name', 'city_id']),
             'meta' => ['count' => App\Models\Hospital::count()]
         ]);
-    });
+ });
 
