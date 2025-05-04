@@ -5,8 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-
-class PatientResource extends JsonResource
+class PatientIndexResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -21,8 +20,8 @@ class PatientResource extends JsonResource
             'age' => $this->age,
             'gender' => $this->gender,
             'birth_date' => $this->birth_date->format('Y-m-d'),
-            'city' => $this->whenLoaded('city', fn() => $this->city->name),
-            'hospital' => $this->whenLoaded('hospital', fn() => $this->hospital->name),
+            'city' => $this->city->name ?? null,
+            'hospital' => $this->hospital->name ?? null,
             'tutor_name' => $this->tutor_name,
             'tutor_phone' => $this->tutor_phone,
             'registration_date' => $this->registration_date->format('Y-m-d'),

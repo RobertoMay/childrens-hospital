@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePatientRequest;
 use App\Http\Requests\UpdatePatientRequest;
 use App\Http\Requests\PartialUpdatePatientRequest;
-use App\Http\Resources\PatientResource;
+use App\Http\Resources\PatientIndexResource;
+use App\Http\Resources\PatientShowResource;
 use App\Models\Patient;
 use Illuminate\Http\JsonResponse; 
 use Illuminate\Http\Request;
@@ -16,9 +17,9 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PatientController extends Controller 
 {
+    
     public function index(Request $request): JsonResponse
     {
-
         $request->validate([
             'per_page' => 'nullable|integer|min:1|max:100',
             'page' => 'nullable|integer|min:1'
@@ -26,17 +27,17 @@ class PatientController extends Controller
 
         $perPage = $request->input('per_page', 10);
         
-        $patients = Patient::with(['city', 'hospital'])
+        $patients = Patient::with(['city:id,name', 'hospital:id,name'])
             ->orderBy('full_name')
             ->paginate($perPage);
 
         return response()->json([
-            'data' => PatientResource::collection($patients),
+            'data' => PatientIndexResource::collection($patients),
             'pagination' => [
                 'current_page' => $patients->currentPage(),
                 'per_page' => $patients->perPage(),
                 'total_pages' => $patients->lastPage(),
-                   'total_items' => $patients->total(),
+                'total_items' => $patients->total(),
                 'has_prev_page' => $patients->currentPage() > 1,
                 'has_next_page' => $patients->currentPage() < $patients->lastPage(),
                 'prev_page' => $patients->currentPage() > 1 ? $patients->currentPage() - 1 : null,
@@ -46,6 +47,7 @@ class PatientController extends Controller
             ]
         ], Response::HTTP_OK);
     }
+
 
     public function store(StorePatientRequest $request): JsonResponse
     {
@@ -60,7 +62,7 @@ class PatientController extends Controller
                 'errors' => [
                     'full_name' => ['Ya existe un paciente con este nombre y fecha de nacimiento']
                 ],
-                'existing_patient' => new PatientResource($existingPatient)
+                'existing_patient' => new PatientIndexResource($existingPatient)
             ], Response::HTTP_CONFLICT); // 409 Conflict es más apropiado para duplicados
         }
 
@@ -70,7 +72,7 @@ class PatientController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Paciente creado exitosamente',
-                'data' => new PatientResource($patient)
+                'data' => new PatientIndexResource($patient)
             ], Response::HTTP_CREATED);
             
         } catch (\Exception $e) {
@@ -85,7 +87,7 @@ class PatientController extends Controller
     public function show(Patient $patient): JsonResponse
     {
         return response()->json([
-            'data' => new PatientResource($patient->load(['city', 'hospital']))
+            'data' => new PatientShowResource($patient)
         ], Response::HTTP_OK);
     }
 
@@ -96,7 +98,7 @@ class PatientController extends Controller
             
             return response()->json([
                 'message' => 'Paciente actualizado exitosamente',
-                'data' => new PatientResource($patient)
+                'data' => new PatientIndexResource($patient)
             ], Response::HTTP_OK);
             
         } catch (\Exception $e) {
@@ -116,7 +118,7 @@ class PatientController extends Controller
 
             return response()->json([
                 'message' => 'Paciente actualizado exitosamente',
-                'data' => new PatientResource($patient)
+                'data' => new PatientIndexResource($patient)
             ], Response::HTTP_OK);
         }
         catch (\Exception $e) {
@@ -176,7 +178,7 @@ class PatientController extends Controller
             $patients = $query->orderBy('full_name')->paginate(10);
 
             return response()->json([
-                'data' => $patients->isEmpty() ? [] : PatientResource::collection($patients),
+                'data' => $patients->isEmpty() ? [] : PatientIndexResource::collection($patients),
                 'meta' => [
                     'current_page' => $patients->currentPage(),
                     'total_pages' => $patients->lastPage(),
