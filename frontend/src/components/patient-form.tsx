@@ -14,21 +14,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { usePatientStore } from '../lib/utils/store';
+import { usePatientStore } from '../lib/utils/stores/patientStore';
+import useCityStore from '../lib/utils/stores/cityStore';
+import useHospitalStore from '../lib/utils/stores/hospitalStore';
 import { toast, Toaster } from 'sonner';
 
 // Validation schema
 const patientSchema = yup
   .object({
-    fullName: yup.string().required('El nombre es obligatorio'),
+    full_name: yup.string().required('El nombre es obligatorio'),
     gender: yup.string().required('El sexo es obligatorio'),
-    birthDate: yup.string().required('La fecha de nacimiento es obligatoria'),
-    city: yup.string().required('La ciudad es obligatoria'),
-    hospital: yup.string().required('El hospital es obligatorio'),
-    guardianName: yup.string().required('El nombre del tutor es obligatorio'),
-    guardianPhone: yup
+    birth_date: yup.string().required('La fecha de nacimiento es obligatoria'),
+    city_id: yup.number().required('La ciudad es obligatoria'),
+    hospital_id: yup.number().required('El hospital es obligatorio'),
+    tutor_name: yup.string().required('El nombre del tutor es obligatorio'),
+    tutor_phone: yup
       .string()
-      .required('El teléfono del tutor es obligatorio'),
+      .required('El teléfono del tutor es obligatorio')
+      .matches(/^[0-9]+$/, 'El teléfono solo debe contener números')
+      .min(10, 'El teléfono debe tener exactamente 10 dígitos')
+      .max(10, 'El teléfono debe tener exactamente 10 dígitos'),
   })
   .required();
 
@@ -40,7 +45,15 @@ interface PatientFormProps {
 }
 
 export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
-  const { selectedPatient, addPatient, updatePatient } = usePatientStore();
+  const {
+    selectedPatient,
+    addPatient,
+    updatePatient,
+    fetchPatients,
+    currentPage,
+  } = usePatientStore();
+  const { cities } = useCityStore();
+  const { hospitals } = useHospitalStore();
 
   const {
     register,
@@ -48,7 +61,7 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
     setValue,
     watch,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<PatientFormData>({
     resolver: yupResolver(patientSchema),
     mode: 'onChange',
@@ -58,40 +71,72 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
   });
 
   useEffect(() => {
-    if (selectedPatient) {
-      // Pre-fill form with selected patient data
-      Object.entries(selectedPatient).forEach(([key, value]) => {
-        if (key !== 'id') {
-          setValue(key as keyof PatientFormData, value);
-        }
+    if (selectedPatient && cities.length > 0 && hospitals.length > 0) {
+      console.log('Datos del paciente:', selectedPatient);
+
+      reset({
+        full_name: selectedPatient.full_name, // Ahora accedes directamente
+        gender: selectedPatient.gender,
+        birth_date: selectedPatient.birth_date,
+        city_id: selectedPatient.city, // ID de la ciudad
+        hospital_id: selectedPatient.hospital, // ID del hospital
+        tutor_name: selectedPatient.tutor_name,
+        tutor_phone: selectedPatient.tutor_phone,
       });
-    } else {
+    } else if (!selectedPatient) {
       reset();
     }
-  }, [selectedPatient, setValue, reset]);
+  }, [selectedPatient, cities, hospitals, reset]);
 
   const onSubmit = async (data: PatientFormData) => {
     try {
       if (selectedPatient) {
-        updatePatient({
-          id: selectedPatient.id,
-          ...data,
-          registrationDate: selectedPatient.registrationDate,
+        // Para edición - ya tenemos los IDs directamente
+        await updatePatient(selectedPatient.id, {
+          full_name: data.full_name,
+          gender: data.gender,
+          birth_date: data.birth_date,
+          city_id: data.city_id, // Usamos el ID directamente del formulario
+          hospital_id: data.hospital_id, // Usamos el ID directamente del formulario
+          tutor_name: data.tutor_name,
+          tutor_phone: data.tutor_phone,
         });
         toast.success('Paciente actualizado correctamente');
       } else {
-        addPatient({
-          id: Date.now().toString(),
-          ...data,
-          registrationDate: new Date().toISOString().split('T')[0],
+        // Para nuevo paciente
+        await addPatient({
+          full_name: data.full_name,
+          gender: data.gender,
+          birth_date: data.birth_date,
+          city_id: data.city_id,
+          hospital_id: data.hospital_id,
+          tutor_name: data.tutor_name,
+          tutor_phone: data.tutor_phone,
         });
         toast.success('Paciente registrado correctamente');
       }
 
+      await fetchPatients(currentPage);
       onClose();
-    } catch (err) {
-      console.error('Error en onSubmit:', err);
-      toast.error('Ocurrió un error');
+    } catch (error: unknown) {
+      console.error('Error al guardar el paciente:', error);
+      let errorMessage = 'Ocurrió un error al procesar la solicitud';
+
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const axiosError = error as {
+          response?: {
+            data?: {
+              message?: string;
+            };
+          };
+        };
+
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+
+      toast.error(errorMessage);
     }
   };
 
@@ -133,25 +178,25 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Full Name Field */}
                     <div className="space-y-2">
-                      <Label htmlFor="fullName">Nombre completo</Label>
+                      <Label htmlFor="full_name">Nombre completo</Label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                           <User className="h-4 w-4 text-gray-400" />
                         </div>
                         <Input
-                          id="fullName"
+                          id="full_name"
                           placeholder="Nombre completo del paciente"
                           className={`pl-10 border-gray-200 focus:border-gray-400 focus:ring-2 focus:ring-gray-400 ${
-                            errors.fullName
+                            errors.full_name
                               ? 'border-red-300 focus:ring-red-200'
                               : ''
                           }`}
-                          {...register('fullName')}
+                          {...register('full_name')}
                         />
                       </div>
-                      {errors.fullName && (
+                      {errors.full_name && (
                         <p className="text-sm text-red-500">
-                          {errors.fullName.message}
+                          {errors.full_name.message}
                         </p>
                       )}
                     </div>
@@ -160,7 +205,7 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                     <div className="space-y-2">
                       <Label htmlFor="gender">Sexo</Label>
                       <Select
-                        value={watch('gender') || ''} // Asegurar que nunca sea undefined
+                        value={selectedPatient?.gender || watch('gender') || ''}
                         onValueChange={(value) => {
                           setValue('gender', value, { shouldValidate: true });
                         }}
@@ -189,154 +234,179 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
 
                     {/* Birth Date Field */}
                     <div className="space-y-2">
-                      <Label htmlFor="birthDate">Fecha de nacimiento</Label>
+                      <Label htmlFor="birth_date">Fecha de nacimiento</Label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                           <Calendar className="h-4 w-4 text-gray-400" />
                         </div>
                         <Input
-                          id="birthDate"
+                          id="birth_date"
                           type="date"
                           className={`pl-10 border-gray-200 focus:border-gray-400 focus:ring-2 focus:ring-gray-400 ${
-                            errors.birthDate
+                            errors.birth_date
                               ? 'border-red-300 focus:ring-red-200'
                               : ''
                           }`}
-                          {...register('birthDate')}
+                          {...register('birth_date')}
                         />
                       </div>
-                      {errors.birthDate && (
+                      {errors.birth_date && (
                         <p className="text-sm text-red-500">
-                          {errors.birthDate.message}
+                          {errors.birth_date.message}
                         </p>
                       )}
                     </div>
 
                     {/* City Field */}
                     <div className="space-y-2">
-                      <Label htmlFor="city">Ciudad de origen</Label>
+                      <Label htmlFor="city_id">Ciudad de origen</Label>
                       <Select
-                        value={watch('city') || ''}
+                        value={
+                          watch('city_id')?.toString() ||
+                          selectedPatient?.city?.toString() ||
+                          ''
+                        }
                         onValueChange={(value) => {
-                          setValue('city', value, { shouldValidate: true });
+                          const cityId = Number(value);
+                          setValue('city_id', cityId, { shouldValidate: true });
                         }}
                       >
                         <SelectTrigger
                           className={`w-full border-gray-200 focus:border-gray-400 focus:ring-2 focus:ring-gray-400 ${
-                            errors.city
+                            errors.city_id
                               ? 'border-red-300 focus:ring-red-200'
                               : ''
                           }`}
                         >
-                          <SelectValue placeholder="Seleccionar ciudad" />
+                          <SelectValue placeholder="Seleccionar ciudad">
+                            {cities.find(
+                              (c) =>
+                                c.id ===
+                                (watch('city_id') || selectedPatient?.city)
+                            )?.name || 'Seleccionar ciudad'}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Mérida">Mérida</SelectItem>
-                          <SelectItem value="Cancún">Cancún</SelectItem>
-                          <SelectItem value="Guadalajara">
-                            Guadalajara
-                          </SelectItem>
-                          <SelectItem value="Monterrey">Monterrey</SelectItem>
-                          <SelectItem value="CDMX">Ciudad de México</SelectItem>
+                          {cities.map((city) => (
+                            <SelectItem
+                              key={city.id}
+                              value={city.id.toString()}
+                            >
+                              {city.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                      {errors.city && (
+                      {errors.city_id && (
                         <p className="text-sm text-red-500">
-                          {errors.city.message}
+                          {errors.city_id.message}
                         </p>
                       )}
                     </div>
 
                     {/* Hospital Field */}
                     <div className="space-y-2">
-                      <Label htmlFor="hospital">Hospital de origen</Label>
+                      <Label htmlFor="hospital_id">Hospital de origen</Label>
                       <Select
-                        value={watch('hospital') || ''}
+                        value={
+                          watch('hospital_id')?.toString() ||
+                          selectedPatient?.hospital?.toString() ||
+                          ''
+                        }
                         onValueChange={(value) => {
-                          setValue('hospital', value, { shouldValidate: true });
+                          const hospitalId = Number(value);
+                          setValue('hospital_id', hospitalId, {
+                            shouldValidate: true,
+                          });
                         }}
                       >
                         <SelectTrigger
                           className={`w-full border-gray-200 focus:border-gray-400 focus:ring-2 focus:ring-gray-400 ${
-                            errors.hospital
+                            errors.hospital_id
                               ? 'border-red-300 focus:ring-red-200'
                               : ''
                           }`}
                         >
-                          <SelectValue placeholder="Seleccionar hospital" />
+                          <SelectValue placeholder="Seleccionar hospital">
+                            {hospitals.find(
+                              (h) =>
+                                h.id ===
+                                (watch('hospital_id') ||
+                                  selectedPatient?.hospital)
+                            )?.name || 'Seleccionar hospital'}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Hospital General">
-                            Hospital General
-                          </SelectItem>
-                          <SelectItem value="Hospital Infantil">
-                            Hospital Infantil
-                          </SelectItem>
-                          <SelectItem value="Clínica Privada">
-                            Clínica Privada
-                          </SelectItem>
-                          <SelectItem value="Centro Médico">
-                            Centro Médico
-                          </SelectItem>
-                          <SelectItem value="Hospital Regional">
-                            Hospital Regional
-                          </SelectItem>
+                          {hospitals.map((hospital) => (
+                            <SelectItem
+                              key={hospital.id}
+                              value={hospital.id.toString()}
+                            >
+                              {hospital.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                      {errors.hospital && (
+                      {errors.hospital_id && (
                         <p className="text-sm text-red-500">
-                          {errors.hospital.message}
+                          {errors.hospital_id.message}
                         </p>
                       )}
                     </div>
 
-                    {/* Guardian Name Field */}
+                    {/* Tutor Name Field */}
                     <div className="space-y-2">
-                      <Label htmlFor="guardianName">Nombre del tutor</Label>
+                      <Label htmlFor="tutor_name">Nombre del tutor</Label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                           <UserCircle className="h-4 w-4 text-gray-400" />
                         </div>
                         <Input
-                          id="guardianName"
+                          id="tutor_name"
                           placeholder="Nombre del tutor"
                           className={`pl-10 border-gray-200 focus:border-gray-400 focus:ring-2 focus:ring-gray-400 ${
-                            errors.guardianName
+                            errors.tutor_name
                               ? 'border-red-300 focus:ring-red-200'
                               : ''
                           }`}
-                          {...register('guardianName')}
+                          {...register('tutor_name')}
                         />
                       </div>
-                      {errors.guardianName && (
+                      {errors.tutor_name && (
                         <p className="text-sm text-red-500">
-                          {errors.guardianName.message}
+                          {errors.tutor_name.message}
                         </p>
                       )}
                     </div>
 
-                    {/* Guardian Phone Field */}
+                    {/* Tutor Phone Field */}
                     <div className="space-y-2">
-                      <Label htmlFor="guardianPhone">Teléfono del tutor</Label>
+                      <Label htmlFor="tutor_phone">Teléfono del tutor</Label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                           <Phone className="h-4 w-4 text-gray-400" />
                         </div>
                         <Input
-                          id="guardianPhone"
+                          id="tutor_phone"
                           type="tel"
                           placeholder="Teléfono del tutor"
                           className={`pl-10 border-gray-200 focus:border-gray-400 focus:ring-2 focus:ring-gray-400 ${
-                            errors.guardianPhone
+                            errors.tutor_phone
                               ? 'border-red-300 focus:ring-red-200'
                               : ''
                           }`}
-                          {...register('guardianPhone')}
+                          {...register('tutor_phone')}
+                          onKeyPress={(e) => {
+                            if (!/[0-9]/.test(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          maxLength={10}
                         />
                       </div>
-                      {errors.guardianPhone && (
+                      {errors.tutor_phone && (
                         <p className="text-sm text-red-500">
-                          {errors.guardianPhone.message}
+                          {errors.tutor_phone.message}
                         </p>
                       )}
                     </div>
@@ -348,14 +418,46 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                       variant="outline"
                       onClick={onClose}
                       className="border-gray-200 hover:bg-gray-50"
+                      disabled={isSubmitting}
                     >
                       Cancelar
                     </Button>
                     <Button
                       type="submit"
                       className="bg-blue-500 hover:bg-blue-600"
+                      disabled={isSubmitting}
                     >
-                      {selectedPatient ? 'Actualizar' : 'Guardar'}
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          {selectedPatient
+                            ? 'Actualizando...'
+                            : 'Registrando...'}
+                        </span>
+                      ) : selectedPatient ? (
+                        'Actualizar'
+                      ) : (
+                        'Guardar'
+                      )}
                     </Button>
                   </div>
                 </form>

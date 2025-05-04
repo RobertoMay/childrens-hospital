@@ -1,7 +1,7 @@
 import api from './api';
 
 interface Hospital {
-  id: string;
+  id: number;
   name: string;
   city: {
     id: string;

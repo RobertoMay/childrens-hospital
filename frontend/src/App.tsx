@@ -5,15 +5,18 @@ import { Toaster } from 'sonner';
 import useCityStore from './lib/utils/stores/cityStore';
 import { useEffect } from 'react';
 import useHospitalStore from './lib/utils/stores/hospitalStore';
+import { usePatientStore } from './lib/utils/stores/patientStore';
 
 function App() {
   const { fetchCities } = useCityStore();
   const { fetchHospitals } = useHospitalStore();
+  const { fetchPatients } = usePatientStore();
 
   useEffect(() => {
     fetchCities();
     fetchHospitals();
-  }, [fetchCities, fetchHospitals]);
+    fetchPatients();
+  }, [fetchCities, fetchHospitals, fetchPatients]);
 
   return (
     <>

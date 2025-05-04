@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   FileText,
@@ -11,6 +11,7 @@ import {
   MapPin,
   UserCircle2,
   Calendar,
+  Home,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -23,7 +24,10 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { usePatientStore } from '../lib/utils/store';
+import {
+  PatientDetailResponse,
+  usePatientStore,
+} from '../lib/utils/stores/patientStore';
 import PatientForm from './patient-form';
 import PdfViewer from './pdf-viewer';
 import { Badge } from './ui/badge';
@@ -31,73 +35,137 @@ import { ConfirmationDialog } from './ui/confirmation-dialog';
 import { toast } from 'sonner';
 
 export default function PatientTable() {
-  const { patients, setSelectedPatient } = usePatientStore();
+  const {
+    patients,
+    selectedPatient,
+    currentPage,
+    totalPages,
+    totalItems,
+    isLoading,
+    error,
+    setSelectedPatient,
+    fetchPatients,
+    searchPatients,
+    removePatient,
+  } = usePatientStore();
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [showPdf, setShowPdf] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-
-  const patientsPerPage = 10;
-
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
-    patientId: string | null;
+    patientId: number | null;
   }>({ isOpen: false, patientId: null });
 
-  // Filtrar pacientes basado en término de búsqueda
-  const filteredPatients = patients.filter(
-    (patient) =>
-      patient.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.guardianName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [pdfViewerState, setPdfViewerState] = useState<{
+    isOpen: boolean;
+    patientId: number | null;
+  }>({ isOpen: false, patientId: null });
 
-  // Calcular paginación
-  const indexOfLastPatient = currentPage * patientsPerPage;
-  const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
-  const currentPatients = filteredPatients.slice(
-    indexOfFirstPatient,
-    indexOfLastPatient
-  );
-  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
 
-  // Función para manejar nuevo paciente
+  const handleSearch = (term: string, page: number = 1) => {
+    if (term.trim()) {
+      searchPatients(term, page);
+    } else {
+      fetchPatients(page);
+    }
+  };
+
   const handleNewPatient = () => {
     setSelectedPatient(null);
     setShowForm(true);
   };
 
-  // Función para ver PDF
-  const handleViewPdf = (patientId: string) => {
-    const patient = patients.find((p) => p.id === patientId);
-    if (patient) {
-      setSelectedPatient(patient);
-      setShowPdf(true);
+  const handleViewPdf = async (patientId: number) => {
+    try {
+      setPdfViewerState({ isOpen: true, patientId });
+    } catch (error) {
+      console.error('Error al preparar el PDF:', error);
+      toast.error('Error al cargar el PDF');
     }
   };
 
-  // Función para editar paciente
-  const handleEdit = (patientId: string) => {
-    const patient = patients.find((p) => p.id === patientId);
-    if (patient) {
-      setSelectedPatient(patient);
+  const handleEdit = async (patientId: number) => {
+    try {
+      await usePatientStore.getState().getPatientDetails(patientId);
       setShowForm(true);
+    } catch (error) {
+      toast.error('Error al cargar los datos del paciente');
     }
   };
 
-  // Función para eliminar paciente
-  const handleDelete = (patientId: string) => {
+  const handleDelete = (patientId: number) => {
     setDeleteConfirmation({ isOpen: true, patientId });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteConfirmation.patientId) {
-      usePatientStore.getState().removePatient(deleteConfirmation.patientId);
-      toast.success('Paciente eliminado correctamente');
+      try {
+        await removePatient(deleteConfirmation.patientId);
+        toast.success('Paciente eliminado correctamente');
+      } catch (error) {
+        console.error('Error al eliminar paciente:', error);
+        toast.error('Error al eliminar paciente');
+      }
+      setDeleteConfirmation({ isOpen: false, patientId: null });
     }
-    setDeleteConfirmation({ isOpen: false, patientId: null });
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent">
+            <span className="sr-only">Cargando...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-red-500"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Error al cargar pacientes
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => fetchPatients()}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Reintentar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -111,10 +179,9 @@ export default function PatientTable() {
         message="¿Estás seguro de que deseas eliminar este paciente? Esta acción no se puede deshacer."
         confirmText="Eliminar"
       />
-
       <Card className="bg-white rounded-lg shadow-sm border border-gray-100">
         <CardContent className="p-4 sm:p-6">
-          {/* Header con buscador y botones - Mejorado para móviles */}
+          {/* Header con buscador y botones */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex justify-between items-start">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
@@ -191,7 +258,7 @@ export default function PatientTable() {
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    setCurrentPage(1);
+                    handleSearch(e.target.value);
                   }}
                 />
               </div>
@@ -242,10 +309,13 @@ export default function PatientTable() {
                       <TableHead className="bg-gray-50">Edad</TableHead>
                       <TableHead className="bg-gray-50">Ciudad</TableHead>
                       <TableHead className="bg-gray-50 hidden md:table-cell">
+                        Hospital
+                      </TableHead>
+                      <TableHead className="bg-gray-50 hidden md:table-cell">
                         Tutor
                       </TableHead>
                       <TableHead className="bg-gray-50 hidden sm:table-cell">
-                        Fecha
+                        Fecha de inscripción
                       </TableHead>
                       <TableHead className="rounded-tr-lg bg-gray-50 text-right">
                         Acciones
@@ -253,24 +323,29 @@ export default function PatientTable() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {currentPatients.length > 0 ? (
-                      currentPatients.map((patient) => (
+                    {patients.length > 0 ? (
+                      patients.map((patient) => (
                         <TableRow
                           key={patient.id}
                           className="hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                         >
                           <TableCell className="font-medium py-3 sm:py-4">
-                            {patient.fullName}
+                            {patient.full_name}
                           </TableCell>
-                          <TableCell>{patient.age}</TableCell>
+                          <TableCell>{patient.age} años</TableCell>
                           <TableCell className="whitespace-nowrap">
                             {patient.city}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                            {patient.guardianName}
+                            {patient.hospital}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {patient.tutor_name}
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
-                            {patient.registrationDate}
+                            {new Date(
+                              patient.registration_date
+                            ).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
@@ -308,7 +383,7 @@ export default function PatientTable() {
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={7}
                           className="text-center py-8 text-gray-500"
                         >
                           No se encontraron pacientes
@@ -321,8 +396,8 @@ export default function PatientTable() {
             </motion.div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
-              {currentPatients.length > 0 ? (
-                currentPatients.map((patient) => (
+              {patients.length > 0 ? (
+                patients.map((patient) => (
                   <motion.div
                     key={patient.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -330,10 +405,10 @@ export default function PatientTable() {
                     transition={{ duration: 0.3 }}
                   >
                     <Card className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all h-full">
-                      <CardContent className="p-4">
+                      <CardContent className="p-4 pt-4">
                         <div className="flex justify-between items-start mb-3">
                           <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
-                            {patient.fullName}
+                            {patient.full_name}
                           </h3>
                           <Badge
                             variant="outline"
@@ -348,16 +423,23 @@ export default function PatientTable() {
                             {patient.city}
                           </p>
                           <p className="flex items-center gap-2">
+                            <Home className="h-3.5 w-3.5 text-gray-500" />
+                            <span className="truncate">{patient.hospital}</span>
+                          </p>
+                          <p className="flex items-center gap-2">
                             <UserCircle2 className="h-3.5 w-3.5 text-gray-500" />
                             <span className="truncate">
-                              {patient.guardianName}
+                              {patient.tutor_name}
                             </span>
                           </p>
                           <p className="flex items-center gap-2">
                             <Calendar className="h-3.5 w-3.5 text-gray-500" />
-                            {patient.registrationDate}
+                            {new Date(
+                              patient.registration_date
+                            ).toLocaleDateString()}
                           </p>
                         </div>
+
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
@@ -405,8 +487,8 @@ export default function PatientTable() {
             </div>
           )}
 
-          {/* Paginación mejorada */}
-          {filteredPatients.length > 0 && (
+          {/* Paginación */}
+          {totalItems > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -414,16 +496,15 @@ export default function PatientTable() {
               className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-3"
             >
               <p className="text-xs sm:text-sm text-gray-500">
-                Mostrando {indexOfFirstPatient + 1}-
-                {Math.min(indexOfLastPatient, filteredPatients.length)} de{' '}
-                {filteredPatients.length} pacientes
+                Mostrando página {currentPage} de {totalPages} - {totalItems}{' '}
+                pacientes
               </p>
               <div className="flex items-center gap-1 sm:gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   className="rounded-lg border-gray-200 hover:bg-gray-50 hidden sm:inline-flex"
-                  onClick={() => setCurrentPage(1)}
+                  onClick={() => handleSearch(searchTerm, 1)}
                   disabled={currentPage === 1}
                 >
                   Primera
@@ -432,9 +513,7 @@ export default function PatientTable() {
                   variant="outline"
                   size="sm"
                   className="rounded-lg border-gray-200 hover:bg-gray-50 h-8 w-8 p-0"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
+                  onClick={() => handleSearch(searchTerm, currentPage - 1)}
                   disabled={currentPage === 1}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -464,7 +543,7 @@ export default function PatientTable() {
                             ? ''
                             : 'border-gray-200 hover:bg-gray-500'
                         }`}
-                        onClick={() => setCurrentPage(pageNum)}
+                        onClick={() => handleSearch(searchTerm, pageNum)}
                       >
                         {pageNum}
                       </Button>
@@ -478,7 +557,7 @@ export default function PatientTable() {
                       variant="outline"
                       size="sm"
                       className="rounded-lg h-8 w-8 p-0 text-xs sm:text-sm border-gray-200 hover:bg-gray-500"
-                      onClick={() => setCurrentPage(totalPages)}
+                      onClick={() => handleSearch(searchTerm, totalPages)}
                     >
                       {totalPages}
                     </Button>
@@ -488,9 +567,7 @@ export default function PatientTable() {
                   variant="outline"
                   size="sm"
                   className="rounded-lg border-gray-200 hover:bg-gray-50 h-8 w-8 p-0"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
+                  onClick={() => handleSearch(searchTerm, currentPage + 1)}
                   disabled={currentPage === totalPages}
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -499,7 +576,7 @@ export default function PatientTable() {
                   variant="outline"
                   size="sm"
                   className="rounded-lg border-gray-200 hover:bg-gray-50 hidden sm:inline-flex"
-                  onClick={() => setCurrentPage(totalPages)}
+                  onClick={() => handleSearch(searchTerm, totalPages)}
                   disabled={currentPage === totalPages}
                 >
                   Última
@@ -509,14 +586,20 @@ export default function PatientTable() {
           )}
         </CardContent>
       </Card>
-
       {/* Modales */}
-      {showForm && (
-        <PatientForm isOpen={showForm} onClose={() => setShowForm(false)} />
+      {pdfViewerState.isOpen && (
+        <PdfViewer
+          isOpen={pdfViewerState.isOpen}
+          onClose={() => setPdfViewerState({ isOpen: false, patientId: null })}
+          patientId={pdfViewerState.patientId}
+        />
       )}
 
-      {showPdf && (
-        <PdfViewer isOpen={showPdf} onClose={() => setShowPdf(false)} />
+      {showForm && (
+        <PatientForm
+          isOpen={showForm}
+          onClose={() => setShowForm(false)} // Solo cierra el modal
+        />
       )}
     </div>
   );

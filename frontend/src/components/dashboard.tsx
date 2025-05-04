@@ -1,11 +1,31 @@
 import { motion } from 'framer-motion';
 import { UserPlus, Users, MapPin, Home } from 'lucide-react';
 import PatientTable from './patient-table';
-import { usePatientStore } from '../lib/utils/store';
+import { usePatientStore } from '../lib/utils/stores/patientStore';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { useEffect, useState } from 'react';
+import useCityStore from '../lib/utils/stores/cityStore';
+import useHospitalStore from '../lib/utils/stores/hospitalStore';
 
 export default function Dashboard() {
-  const { patients } = usePatientStore();
+  const { totalItems, patients } = usePatientStore();
+  const { count: cityCount } = useCityStore();
+  const { count: hospitalCount } = useHospitalStore();
+  const [newLastMonth, setNewLastMonth] = useState(0);
+
+  useEffect(() => {
+    // Calcular pacientes del último mes basado en created_at
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const newPatients = patients.filter((patient) => {
+      if (!patient.created_at) return false;
+      const createdDate = new Date(patient.created_at);
+      return createdDate >= firstDayOfMonth;
+    });
+
+    setNewLastMonth(newPatients.length);
+  }, [patients]);
 
   const container = {
     hidden: { opacity: 0 },
@@ -51,7 +71,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
-                <p className="text-3xl font-bold">{patients.length}</p>
+                <p className="text-3xl font-bold">{totalItems}</p>
                 <Users className="h-8 w-8 text-blue-400" />
               </div>
             </CardContent>
@@ -62,13 +82,12 @@ export default function Dashboard() {
           <Card className="bg-white border-l-4 border-green-400 hover:shadow-lg transition-all">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
-                Nuevos (Último Mes)
+                Nuevos (Este Mes)
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
-                <p className="text-3xl font-bold">24</p>{' '}
-                {/* Ejemplo, deberías calcular este valor */}
+                <p className="text-3xl font-bold">{newLastMonth}</p>
                 <UserPlus className="h-8 w-8 text-green-400" />
               </div>
             </CardContent>
@@ -84,10 +103,8 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
-                <p className="text-3xl font-bold">8</p>{' '}
-                {/* Ejemplo, deberías calcular este valor */}
-                <MapPin className="h-8 w-8 text-amber-400" />{' '}
-                {/* Nuevo icono */}
+                <p className="text-3xl font-bold">{cityCount}</p>
+                <MapPin className="h-8 w-8 text-amber-400" />
               </div>
             </CardContent>
           </Card>
@@ -102,9 +119,8 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
-                <p className="text-3xl font-bold">3</p>{' '}
-                {/* Ejemplo, deberías calcular este valor */}
-                <Home className="h-8 w-8 text-purple-400" /> {/* Nuevo icono */}
+                <p className="text-3xl font-bold">{hospitalCount}</p>
+                <Home className="h-8 w-8 text-purple-400" />
               </div>
             </CardContent>
           </Card>

@@ -2,11 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import HospitalService from '../../../services/hospitalService';
 
-interface Hospital {
-  id: string;
+export interface Hospital {
+  id: number;
   name: string;
   city: {
-    id: string;
+    id: number;
     name: string;
   };
 }
@@ -32,7 +32,14 @@ const useHospitalStore = create<HospitalStore>()(
         try {
           const response = await HospitalService.getAll();
           set({
-            hospitals: response.data,
+            hospitals: response.data.map((hospital) => ({
+              ...hospital,
+              id: Number(hospital.id), // Aseguramos que id sea número
+              city: {
+                ...hospital.city,
+                id: Number(hospital.city.id), // Aseguramos que city.id sea número
+              },
+            })),
             count: response.meta.count,
             isLoading: false,
           });

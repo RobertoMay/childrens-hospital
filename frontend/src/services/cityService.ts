@@ -1,7 +1,7 @@
 import api from './api';
 
 interface City {
-  id: string;
+  id: number;
   name: string;
   state: string;
 }

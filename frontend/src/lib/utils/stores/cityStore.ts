@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import CityService from '../../../services/cityService';
 
-interface City {
-  id: string;
+export interface City {
+  id: number;
   name: string;
   state: string;
 }
@@ -29,7 +29,10 @@ const useCityStore = create<CityStore>()(
         try {
           const response = await CityService.getAll();
           set({
-            cities: response.data,
+            cities: response.data.map((city) => ({
+              ...city,
+              id: Number(city.id),
+            })),
             count: response.meta.count,
             isLoading: false,
           });

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, UserPlus, Users, MapPin, Hospital, Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
-import { usePatientStore } from '../lib/utils/store';
+import { usePatientStore } from '../lib/utils/stores/patientStore';
 import PatientForm from './patient-form';
 
 export default function Navbar() {
@@ -70,14 +70,14 @@ export default function Navbar() {
                 Pacientes
               </Link>
 
-              <Link to="/hospitals" className={linkStyle}>
-                <Hospital className="h-4 w-4 mr-1" />
-                Hospitales
-              </Link>
-
               <Link to="/cities" className={linkStyle}>
                 <MapPin className="h-4 w-4 mr-1" />
                 Ciudades
+              </Link>
+
+              <Link to="/hospitals" className={linkStyle}>
+                <Hospital className="h-4 w-4 mr-1" />
+                Hospitales
               </Link>
 
               <Button
