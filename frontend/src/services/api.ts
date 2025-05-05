@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../lib/constants';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000,
+  timeout: 10000,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',

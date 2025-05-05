@@ -4,7 +4,6 @@ import {
   FileText,
   Pencil,
   Trash2,
-  Search,
   ChevronLeft,
   ChevronRight,
   UserPlus,
@@ -14,7 +13,6 @@ import {
   Home,
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
 import {
   Table,
@@ -24,10 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import {
-  PatientDetailResponse,
-  usePatientStore,
-} from '../lib/utils/stores/patientStore';
+import { usePatientStore } from '../lib/utils/stores/patientStore';
 import PatientForm from './patient-form';
 import PdfViewer from './pdf-viewer';
 import { Badge } from './ui/badge';
@@ -37,7 +32,6 @@ import { toast } from 'sonner';
 export default function PatientTable() {
   const {
     patients,
-    selectedPatient,
     currentPage,
     totalPages,
     totalItems,
@@ -45,13 +39,10 @@ export default function PatientTable() {
     error,
     setSelectedPatient,
     fetchPatients,
-    searchPatients,
     removePatient,
   } = usePatientStore();
 
-  const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [showPdf, setShowPdf] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
@@ -66,14 +57,6 @@ export default function PatientTable() {
   useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
-
-  const handleSearch = (term: string, page: number = 1) => {
-    if (term.trim()) {
-      searchPatients(term, page);
-    } else {
-      fetchPatients(page);
-    }
-  };
 
   const handleNewPatient = () => {
     setSelectedPatient(null);
@@ -94,6 +77,7 @@ export default function PatientTable() {
       await usePatientStore.getState().getPatientDetails(patientId);
       setShowForm(true);
     } catch (error) {
+      console.error('Error al cargar los datos del paciente:', error);
       toast.error('Error al cargar los datos del paciente');
     }
   };
@@ -181,118 +165,44 @@ export default function PatientTable() {
       />
       <Card className="bg-white rounded-lg shadow-sm border border-gray-100">
         <CardContent className="p-4 sm:p-6">
-          {/* Header con buscador y botones */}
           <div className="flex flex-col gap-4 mb-6">
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-center">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
                 Pacientes Registrados
               </h2>
 
-              <div className="flex gap-2 sm:hidden">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-lg"
-                  onClick={() =>
-                    setViewMode(viewMode === 'table' ? 'cards' : 'table')
-                  }
-                  title={viewMode === 'table' ? 'Ver tarjetas' : 'Ver tabla'}
-                >
-                  {viewMode === 'table' ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="3" y="3" width="7" height="7"></rect>
-                      <rect x="14" y="3" width="7" height="7"></rect>
-                      <rect x="14" y="14" width="7" height="7"></rect>
-                      <rect x="3" y="14" width="7" height="7"></rect>
-                    </svg>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="8" y1="6" x2="21" y2="6"></line>
-                      <line x1="8" y1="12" x2="21" y2="12"></line>
-                      <line x1="8" y1="18" x2="21" y2="18"></line>
-                      <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                      <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                      <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleNewPatient}
-                  className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
-                  size="icon"
-                >
-                  <UserPlus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
-              <div className="relative w-full">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
+              <div className="flex gap-2">
+                <div className="hidden sm:flex gap-2">
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-lg border-gray-200"
+                    onClick={() => setViewMode('table')}
+                  >
+                    Tabla
+                  </Button>
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-lg border-gray-200"
+                    onClick={() => setViewMode('cards')}
+                  >
+                    Tarjetas
+                  </Button>
                 </div>
-                <Input
-                  type="text"
-                  placeholder="Buscar pacientes..."
-                  className="pl-10 rounded-lg border-gray-200 focus-visible:ring-1 focus-visible:ring-blue-100"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    handleSearch(e.target.value);
-                  }}
-                />
-              </div>
-
-              <div className="hidden sm:flex gap-2">
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
-                  size="sm"
-                  className="rounded-lg border-gray-200"
-                  onClick={() => setViewMode('table')}
-                >
-                  Tabla
-                </Button>
-                <Button
-                  variant={viewMode === 'cards' ? 'default' : 'outline'}
-                  size="sm"
-                  className="rounded-lg border-gray-200"
-                  onClick={() => setViewMode('cards')}
-                >
-                  Tarjetas
-                </Button>
                 <Button
                   onClick={handleNewPatient}
                   className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
                   size="sm"
                 >
                   <UserPlus className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">Nuevo</span>
+                  <span className="hidden sm:inline">Nuevo Paciente</span>
+                  <span className="sm:hidden">Nuevo</span>
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Contenido (Tabla o Tarjetas) */}
           {viewMode === 'table' ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -487,7 +397,6 @@ export default function PatientTable() {
             </div>
           )}
 
-          {/* Paginación */}
           {totalItems > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -504,7 +413,7 @@ export default function PatientTable() {
                   variant="outline"
                   size="sm"
                   className="rounded-lg border-gray-200 hover:bg-gray-50 hidden sm:inline-flex"
-                  onClick={() => handleSearch(searchTerm, 1)}
+                  onClick={() => fetchPatients(1)}
                   disabled={currentPage === 1}
                 >
                   Primera
@@ -513,7 +422,7 @@ export default function PatientTable() {
                   variant="outline"
                   size="sm"
                   className="rounded-lg border-gray-200 hover:bg-gray-50 h-8 w-8 p-0"
-                  onClick={() => handleSearch(searchTerm, currentPage - 1)}
+                  onClick={() => fetchPatients(currentPage - 1)}
                   disabled={currentPage === 1}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -543,7 +452,7 @@ export default function PatientTable() {
                             ? ''
                             : 'border-gray-200 hover:bg-gray-500'
                         }`}
-                        onClick={() => handleSearch(searchTerm, pageNum)}
+                        onClick={() => fetchPatients(pageNum)}
                       >
                         {pageNum}
                       </Button>
@@ -557,7 +466,7 @@ export default function PatientTable() {
                       variant="outline"
                       size="sm"
                       className="rounded-lg h-8 w-8 p-0 text-xs sm:text-sm border-gray-200 hover:bg-gray-500"
-                      onClick={() => handleSearch(searchTerm, totalPages)}
+                      onClick={() => fetchPatients(totalPages)}
                     >
                       {totalPages}
                     </Button>
@@ -567,7 +476,7 @@ export default function PatientTable() {
                   variant="outline"
                   size="sm"
                   className="rounded-lg border-gray-200 hover:bg-gray-50 h-8 w-8 p-0"
-                  onClick={() => handleSearch(searchTerm, currentPage + 1)}
+                  onClick={() => fetchPatients(currentPage + 1)}
                   disabled={currentPage === totalPages}
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -576,7 +485,7 @@ export default function PatientTable() {
                   variant="outline"
                   size="sm"
                   className="rounded-lg border-gray-200 hover:bg-gray-50 hidden sm:inline-flex"
-                  onClick={() => handleSearch(searchTerm, totalPages)}
+                  onClick={() => fetchPatients(totalPages)}
                   disabled={currentPage === totalPages}
                 >
                   Última
@@ -586,7 +495,7 @@ export default function PatientTable() {
           )}
         </CardContent>
       </Card>
-      {/* Modales */}
+
       {pdfViewerState.isOpen && (
         <PdfViewer
           isOpen={pdfViewerState.isOpen}
@@ -596,10 +505,7 @@ export default function PatientTable() {
       )}
 
       {showForm && (
-        <PatientForm
-          isOpen={showForm}
-          onClose={() => setShowForm(false)} // Solo cierra el modal
-        />
+        <PatientForm isOpen={showForm} onClose={() => setShowForm(false)} />
       )}
     </div>
   );

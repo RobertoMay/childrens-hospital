@@ -7,55 +7,161 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## About Laravel
+# Ejecución del backend
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Asegúrese de que se encuentre dentro de la carpeta backend
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+```bash
+cd backend
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## **Ejecutar el proyecto con Docker Sail**
 
-## Learning Laravel
+### **Requisitos previos**
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. Tener instalado [Docker](https://docs.docker.com/desktop/setup/install/windows-install/).
+2. Si se usa Windows es recomendable tener instalado WSL2
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### **1. Configurar el archivo `.env`**
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Se debe crear el archivo .env en la raíz del proyecto backend basándose en .env.example
 
-## Laravel Sponsors
+```bash
+cp .env.example .env
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Luego edite **`.env`** y asegúrese de que tenga estas variables clave:
 
-### Premium Partners
+```
+APP_NAME=Laravel
+APP_KEY=base64:RC6onFfBIyXS9ylRI0Thkl/QB3rRFMRRWaXA9vS7U4g=
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=patients
+DB_USERNAME=sail
+DB_PASSWORD=password
 
-## Contributing
+APP_PORT=8000
+FORWARD_DB_PORT=3307
+VITE_PORT=5174
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### **2. Instalar dependencias de Composer (usando Sail)**
 
-## Code of Conduct
+Ejecuta este comando para instalar las dependencias dentro del contenedor:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+./vendor/bin/sail composer install
+```
 
-## Security Vulnerabilities
+### **3. Iniciar los contenedores con Sail**
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+./vendor/bin/sail up -d
+```
 
-## License
+Esto iniciará:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+-   Un contenedor para Laravel en el puerto **`8000`**.
+-   Un contenedor para MySQL en el puerto **`3307`**.
+
+### **4. Ejecutar migraciones y seeders**
+
+```bash
+./vendor/bin/sail artisan migrate --seed
+```
+
+Esto creará las tablas con los datos de ejemplo.
+
+### **5. Acceder a la aplicación**
+
+-   **Laravel**: [http://localhost:8000](http://localhost:8000/).
+-   **MySQL**: Puede conectarse desde un cliente usando:
+    -   Host: `localhost`
+    -   Puerto: **`3307`**
+    -   Usuario: **`sail`**
+    -   Contraseña: **`password`**
+
+## **Ejecutar el proyecto localmente**
+
+### **Requisitos previos**
+
+1. **Servidor web local** (XAMPP, WAMP, Laragon o similar)
+2. **PHP 8.1+**
+3. **Composer** ([Instalar](https://getcomposer.org/))
+4. **MySQL**
+
+### **1. Configurar el archivo `.env`**
+
+```bash
+cp .env.example .env
+```
+
+ó si esta en Windows:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+(Igual se puede hacer manualmente).
+
+### 1.1. Editar **`.env`** con estos valores:
+
+```
+APP_NAME=Laravel
+APP_KEY=base64:RC6onFfBIyXS9ylRI0Thkl/QB3rRFMRRWaXA9vS7U4g=
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=patients
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+**Nota:**
+
+-   `DB_DATABASE` es obligatorio.
+-   Los demás valores (`DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`) dependen de su entorno.
+-   En XAMPP, por defecto el usuario es `root` y la contraseña está vacía.
+
+### **2. Instalar dependencias**
+
+```powershell
+composer install
+```
+
+### **3. Configurar base de datos**
+
+1. Crear una base de datos llamada **`patients`** en MySQL
+2. Ejecutar migraciones y seeders:
+
+```powershell
+php artisan migrate --seed
+```
+
+Esto creará las tablas con los datos de ejemplo.
+
+### **4. Generar clave de aplicación**
+
+```powershell
+php artisan key:generate
+```
+
+### **5. Iniciar el servidor**
+
+```powershell
+php artisan serve --port=8000
+```
+
+### **7. Acceder a la aplicación**
+
+-   **Laravel**: [http://localhost:8000](http://localhost:8000/)
+-   **MySQL**: Puede conectarse desde un cliente usando los datos que proporcionó en .env de acuerdo a su entorno:
+    -   Host: `localhost`
+    -   Puerto: **`3306`**
+    -   Usuario: **`root`**
+    -   Contraseña:

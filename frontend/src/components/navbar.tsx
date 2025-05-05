@@ -14,7 +14,7 @@ export default function Navbar() {
   const handleNewPatient = () => {
     setSelectedPatient(null);
     setShowForm(true);
-    setMobileMenuOpen(false); // Cerrar menú móvil al abrir formulario
+    setMobileMenuOpen(false);
   };
 
   const linkStyle =
@@ -33,7 +33,6 @@ export default function Navbar() {
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            {/* Logo y botón móvil */}
             <div className="flex items-center justify-between w-full md:w-auto">
               <Link to="/" className="flex items-center">
                 <div className="bg-blue-500 text-white p-2 rounded-full mr-2 flex items-center justify-center">
@@ -44,7 +43,6 @@ export default function Navbar() {
                 </span>
               </Link>
 
-              {/* Botón menú móvil */}
               <button
                 type="button"
                 className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 focus:outline-none"
@@ -58,7 +56,6 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Menú desktop (oculto en móvil) */}
             <div className="hidden md:flex items-center space-x-2">
               <Link to="/" className={linkStyle}>
                 <Home className="h-4 w-4 mr-1" />
@@ -92,7 +89,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Menú móvil (animado) */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div

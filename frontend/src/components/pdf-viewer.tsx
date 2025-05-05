@@ -42,11 +42,13 @@ export default function PdfViewer({
       };
       loadPdf();
     }
+  }, [isOpen, patientId]);
 
+  useEffect(() => {
     return () => {
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     };
-  }, [isOpen, patientId]);
+  }, [pdfUrl]);
 
   const handleDownload = () => {
     if (pdfUrl && patient) {
@@ -64,7 +66,6 @@ export default function PdfViewer({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl h-[90vh] flex flex-col border border-gray-200 overflow-hidden">
-        {/* Encabezado con fondo blanco puro */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
           <h2 className="text-xl font-semibold text-blue-600">
             Archivo de -{' '}
@@ -91,7 +92,6 @@ export default function PdfViewer({
           </div>
         </div>
 
-        {/* Contenido del PDF */}
         <div className="flex-1 flex flex-col p-0 bg-gray-50">
           {isLoading ? (
             <div className="flex flex-1 items-center justify-center">

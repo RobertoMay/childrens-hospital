@@ -14,7 +14,6 @@ export default function Dashboard() {
   const [newLastMonth, setNewLastMonth] = useState(0);
 
   useEffect(() => {
-    // Calcular pacientes del último mes basado en created_at
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 

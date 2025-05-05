@@ -158,42 +158,6 @@ class PatientController extends Controller
         }
     }
 
-    public function search(Request $request): JsonResponse
-    {
-        try {
-            $query = Patient::query()->with(['city', 'hospital']);
-
-            if ($request->filled('name')) {
-                $query->whereRaw('LOWER(full_name) LIKE ?', ['%' . strtolower($request->name) . '%']);
-            }
-
-            if ($request->filled('hospital_id')) {
-                $query->where('hospital_id', $request->hospital_id);
-            }
-
-            if ($request->filled('city_id')) {
-                $query->where('city_id', $request->city_id);
-            }
-
-            $patients = $query->orderBy('full_name')->paginate(10);
-
-            return response()->json([
-                'data' => $patients->isEmpty() ? [] : PatientIndexResource::collection($patients),
-                'meta' => [
-                    'current_page' => $patients->currentPage(),
-                    'total_pages' => $patients->lastPage(),
-                    'total_items' => $patients->total(),
-                ]
-            ], Response::HTTP_OK);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error en la búsqueda',
-                'error' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
 
     public function generatePdf(Patient $patient)
     {

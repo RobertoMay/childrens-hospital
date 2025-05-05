@@ -19,7 +19,6 @@ import useCityStore from '../lib/utils/stores/cityStore';
 import useHospitalStore from '../lib/utils/stores/hospitalStore';
 import { toast, Toaster } from 'sonner';
 
-// Validation schema
 const patientSchema = yup
   .object({
     full_name: yup.string().required('El nombre es obligatorio'),
@@ -75,11 +74,11 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
       console.log('Datos del paciente:', selectedPatient);
 
       reset({
-        full_name: selectedPatient.full_name, // Ahora accedes directamente
+        full_name: selectedPatient.full_name,
         gender: selectedPatient.gender,
         birth_date: selectedPatient.birth_date,
-        city_id: selectedPatient.city, // ID de la ciudad
-        hospital_id: selectedPatient.hospital, // ID del hospital
+        city_id: selectedPatient.city,
+        hospital_id: selectedPatient.hospital,
         tutor_name: selectedPatient.tutor_name,
         tutor_phone: selectedPatient.tutor_phone,
       });
@@ -91,19 +90,17 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
   const onSubmit = async (data: PatientFormData) => {
     try {
       if (selectedPatient) {
-        // Para edición - ya tenemos los IDs directamente
         await updatePatient(selectedPatient.id, {
           full_name: data.full_name,
           gender: data.gender,
           birth_date: data.birth_date,
-          city_id: data.city_id, // Usamos el ID directamente del formulario
-          hospital_id: data.hospital_id, // Usamos el ID directamente del formulario
+          city_id: data.city_id,
+          hospital_id: data.hospital_id,
           tutor_name: data.tutor_name,
           tutor_phone: data.tutor_phone,
         });
         toast.success('Paciente actualizado correctamente');
       } else {
-        // Para nuevo paciente
         await addPatient({
           full_name: data.full_name,
           gender: data.gender,
@@ -176,7 +173,7 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                   noValidate
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Full Name Field */}
+                    {/* Full Name */}
                     <div className="space-y-2">
                       <Label htmlFor="full_name">Nombre completo</Label>
                       <div className="relative">
@@ -201,7 +198,7 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                       )}
                     </div>
 
-                    {/* Gender Field */}
+                    {/* Gender */}
                     <div className="space-y-2">
                       <Label htmlFor="gender">Sexo</Label>
                       <Select
@@ -232,7 +229,7 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                       )}
                     </div>
 
-                    {/* Birth Date Field */}
+                    {/* Birth Date */}
                     <div className="space-y-2">
                       <Label htmlFor="birth_date">Fecha de nacimiento</Label>
                       <div className="relative">
@@ -257,7 +254,7 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                       )}
                     </div>
 
-                    {/* City Field */}
+                    {/* City */}
                     <div className="space-y-2">
                       <Label htmlFor="city_id">Ciudad de origen</Label>
                       <Select
@@ -304,7 +301,7 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                       )}
                     </div>
 
-                    {/* Hospital Field */}
+                    {/* Hospital */}
                     <div className="space-y-2">
                       <Label htmlFor="hospital_id">Hospital de origen</Label>
                       <Select
@@ -354,7 +351,7 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                       )}
                     </div>
 
-                    {/* Tutor Name Field */}
+                    {/* Tutor Name */}
                     <div className="space-y-2">
                       <Label htmlFor="tutor_name">Nombre del tutor</Label>
                       <div className="relative">
@@ -379,7 +376,7 @@ export default function PatientForm({ isOpen, onClose }: PatientFormProps) {
                       )}
                     </div>
 
-                    {/* Tutor Phone Field */}
+                    {/* Tutor Phone */}
                     <div className="space-y-2">
                       <Label htmlFor="tutor_phone">Teléfono del tutor</Label>
                       <div className="relative">

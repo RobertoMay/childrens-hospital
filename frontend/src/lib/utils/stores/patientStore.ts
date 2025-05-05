@@ -2,30 +2,28 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import PatientService from '../../../services/patientService';
 
-// Interface para listado de pacientes (GET /patients)
 export interface Patient {
   id: number;
   full_name: string;
   age: number;
   gender: string;
   birth_date: string;
-  city: string; // Nombre de la ciudad (string)
-  hospital: string; // Nombre del hospital (string)
+  city: string;
+  hospital: string;
   tutor_name: string;
   tutor_phone: string;
   registration_date: string;
   created_at?: string;
 }
 
-// Interface para detalle de paciente (GET /patients/:id)
 export interface PatientDetail {
   id: number;
   full_name: string;
   age: number;
   gender: string;
   birth_date: string;
-  city: number; // ID de la ciudad (number)
-  hospital: number; // ID del hospital (number)
+  city: number;
+  hospital: number;
   tutor_name: string;
   tutor_phone: string;
   registration_date: string;
@@ -39,8 +37,8 @@ export interface PatientDetailResponse {
     age: number;
     gender: string;
     birth_date: string;
-    city: number; // ID de la ciudad
-    hospital: number; // ID del hospital
+    city: number;
+    hospital: number;
     tutor_name: string;
     tutor_phone: string;
     registration_date: string;
@@ -48,13 +46,12 @@ export interface PatientDetailResponse {
   };
 }
 
-// Interface para crear/actualizar paciente (POST/PUT /patients)
 export interface PatientFormData {
   full_name: string;
   gender: string;
   birth_date: string;
-  city_id: number; // ID de la ciudad (number)
-  hospital_id: number; // ID del hospital (number)
+  city_id: number;
+  hospital_id: number;
   tutor_name: string;
   tutor_phone: string;
 }
@@ -68,14 +65,10 @@ interface PatientStore {
   isLoading: boolean;
   error: string | null;
 
-  // Actions
   setSelectedPatient: (patient: PatientDetail | null) => void;
+
   fetchPatients: (page?: number, perPage?: number) => Promise<void>;
-  searchPatients: (
-    term: string,
-    page?: number,
-    perPage?: number
-  ) => Promise<void>;
+
   getPatientDetails: (id: number) => Promise<PatientDetail>;
   addPatient: (patient: PatientFormData) => Promise<Patient>;
   updatePatient: (
@@ -96,10 +89,8 @@ export const usePatientStore = create<PatientStore>()(
       isLoading: false,
       error: null,
 
-      // Establece el paciente seleccionado
       setSelectedPatient: (patient) => set({ selectedPatient: patient }),
 
-      // Obtiene listado de pacientes
       fetchPatients: async (page = 1, perPage = 10) => {
         set({ isLoading: true, error: null });
         try {
@@ -111,7 +102,6 @@ export const usePatientStore = create<PatientStore>()(
             totalItems: response.pagination.total_items,
             isLoading: false,
           });
-          console.log(response.data);
         } catch (error) {
           set({
             error: 'Error al cargar los pacientes',
@@ -121,38 +111,15 @@ export const usePatientStore = create<PatientStore>()(
         }
       },
 
-      // Busca pacientes
-      searchPatients: async (term, page = 1, perPage = 10) => {
-        set({ isLoading: true, error: null });
-        try {
-          const response = await PatientService.search(term, page, perPage);
-          set({
-            patients: response.data,
-            currentPage: response.pagination.current_page,
-            totalPages: response.pagination.total_pages,
-            totalItems: response.pagination.total_items,
-            isLoading: false,
-          });
-        } catch (error) {
-          set({
-            error: 'Error al buscar pacientes',
-            isLoading: false,
-          });
-          console.error('Error searching patients:', error);
-        }
-      },
-
-      // Obtiene detalles de un paciente específico
       getPatientDetails: async (id: number) => {
         set({ isLoading: true, error: null });
         try {
           const response = await PatientService.getById(id.toString());
 
-          // Extraemos los datos del wrapper 'data'
           const patientData = response.data;
 
           set({
-            selectedPatient: patientData, // Guardamos solo los datos internos
+            selectedPatient: patientData,
             isLoading: false,
           });
           return patientData;
@@ -166,13 +133,11 @@ export const usePatientStore = create<PatientStore>()(
         }
       },
 
-      // Agrega un nuevo paciente
       addPatient: async (patientData: PatientFormData) => {
         set({ isLoading: true, error: null });
         try {
           const response = await PatientService.create(patientData);
 
-          // Convertir la respuesta a tipo Patient para el listado
           const newPatient: Patient = {
             ...response.data,
             city: get().selectedPatient?.city.toString() || '',
@@ -194,13 +159,11 @@ export const usePatientStore = create<PatientStore>()(
         }
       },
 
-      // Actualiza un paciente existente
       updatePatient: async (id, patientData) => {
         set({ isLoading: true, error: null });
         try {
           const response = await PatientService.update(id, patientData);
 
-          // Convertir la respuesta a tipo Patient para el listado
           const updatedPatient: Patient = {
             ...response.data,
             city: patientData.city_id?.toString() || '',
@@ -225,7 +188,6 @@ export const usePatientStore = create<PatientStore>()(
         }
       },
 
-      // Elimina un paciente
       removePatient: async (id) => {
         set({ isLoading: true, error: null });
         try {

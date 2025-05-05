@@ -42,21 +42,6 @@ const PatientService = {
     return response.data;
   },
 
-  search: async (
-    term: string,
-    page: number = 1,
-    perPage: number = 10
-  ): Promise<PatientsResponse> => {
-    const response = await api.get('/patients/search', {
-      params: {
-        q: term,
-        page,
-        per_page: perPage,
-      },
-    });
-    return response.data;
-  },
-
   getById: async (id: string): Promise<PatientDetailResponse> => {
     const response = await api.get(`/patients/${id}`);
     return response.data;
