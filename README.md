@@ -30,7 +30,8 @@ cd backend
 ### **Requisitos previos**
 
 1. Tener instalado [Docker](https://docs.docker.com/desktop/setup/install/windows-install/).
-2. Si se usa Windows es recomendable tener instalado WSL2
+2. **Composer** ([Instalar](https://getcomposer.org/))
+3. Si se usa Windows es recomendable tener instalado WSL2
 
 ### **1. Configurar el archivo `.env`**
 
@@ -44,7 +45,6 @@ Luego edite **`.env`** y asegúrese de que tenga estas variables clave:
 
 ```
 APP_NAME=Laravel
-APP_KEY=base64:RC6onFfBIyXS9ylRI0Thkl/QB3rRFMRRWaXA9vS7U4g=
 
 DB_CONNECTION=mysql
 DB_HOST=mysql
@@ -58,12 +58,11 @@ FORWARD_DB_PORT=3307
 VITE_PORT=5174
 ```
 
-### **2. Instalar dependencias de Composer (usando Sail)**
-
-Ejecuta este comando para instalar las dependencias dentro del contenedor:
+### **2. Instalar dependencias**
+Ejecuta este comando para instalar las dependencias del proyecto:
 
 ```bash
-./vendor/bin/sail composer install
+composer install
 ```
 
 ### **3. Iniciar los contenedores con Sail**
@@ -77,8 +76,12 @@ Esto iniciará:
 - Un contenedor para Laravel en el puerto **`8000`**.
 - Un contenedor para MySQL en el puerto **`3307`**.
 
-### **4. Ejecutar migraciones y seeders**
-
+### **4. Ejecutar migraciones y seeders y clave de la aplicación**
+Para generar la clave de la aplicación
+```bash
+./vendor/bin/sail artisan key:generate
+```
+Para ejecutar las migraciones y los seeders
 ```bash
 ./vendor/bin/sail artisan migrate --seed
 ```
@@ -95,6 +98,7 @@ Esto creará las tablas con los datos de ejemplo.
   - Contraseña: **`password`**
 
 ## **Ejecutar el proyecto localmente**
+(Si lo ejecuto con la opción anterior no es necesario hacer esto)
 
 ### **Requisitos previos**
 
@@ -121,7 +125,6 @@ Copy-Item .env.example .env
 
 ```
 APP_NAME=Laravel
-APP_KEY=base64:RC6onFfBIyXS9ylRI0Thkl/QB3rRFMRRWaXA9vS7U4g=
 APP_URL=http://localhost:8000
 
 DB_CONNECTION=mysql
