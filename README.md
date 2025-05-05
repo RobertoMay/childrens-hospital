@@ -14,7 +14,7 @@
 
 ```bash
 git clone [URL]
-cd hildrens-hospital
+cd childrens-hospital
 ```
 
 # Ejecución del backend
