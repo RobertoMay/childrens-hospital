@@ -76,7 +76,7 @@ Esto iniciará:
 - Un contenedor para Laravel en el puerto **`8000`**.
 - Un contenedor para MySQL en el puerto **`3307`**.
 
-### **4. Ejecutar migraciones y seeders y clave de la aplicación**
+### **4. Ejecutar migraciones, seeders y clave de la aplicación**
 Para generar la clave de la aplicación
 ```bash
 ./vendor/bin/sail artisan key:generate
